@@ -9,6 +9,7 @@ import java.io.IOException;
 
 import com.bibler.awesome.bibburn.serialutils.SerialPortInstance;
 import com.bibler.awesome.bibburn.utils.TimeUtils;
+import com.bibler.awesome.bibburner.ui.MainFrame;
 
 public class BurnManager  {
 	
@@ -32,10 +33,18 @@ public class BurnManager  {
 	final int FAIL_MSG = 0x00;
 	final int DONE = 0x03;
 	
+	private MainFrame mainFrame;
+	
 	public BurnManager(SerialPortInstance serialPort) {
 		this.serialPort = serialPort;
-		this.serialPort.setBurnManager(this);
+		if(serialPort != null) {
+			this.serialPort.setBurnManager(this);
+		}
 		initializeBuffers();
+	}
+	
+	public void setMainFrame(MainFrame mainFrame) {
+		this.mainFrame = mainFrame;
 	}
 	
 	private void initializeBuffers() {
@@ -43,21 +52,25 @@ public class BurnManager  {
 		readBuffer = new int[chipSize];
 	}
 	
-	public void burnData(File f) {
+	public void loadFile(File f) {
 		openFile(f);
+	}
+	
+	public void sendBurnCommand() {
 		serialPort.write(WRITE_CMD);
 		burnState = WRITE_MSG_SENT;
+		//mainFrame.updateMessageArea("Sent Write Command!!");
 	}
 	
 	private void beginBurn() {
-		System.out.println("Beginning Burn");
+		//mainFrame.updateMessageArea("Beginning Burn!");
 		startTime = System.currentTimeMillis();
 		burnState = WRITING;
 		burnNextBlock();
 	}
 	
 	private void beginRead() {
-		System.out.println("Beginning Read");
+		mainFrame.updateMessageArea("Beginning Read!");
 		errorCount = 0;
 		currentAddress = 0;
 		startTime = System.currentTimeMillis();
@@ -72,9 +85,7 @@ public class BurnManager  {
 		}
 		serialPort.writeBlock(dataBuffer, currentAddress, dataBufferSize);
 		currentAddress += dataBufferSize;
-		System.out.print("Address - " + Integer.toHexString(currentAddress));
-		System.out.print(" Percent - " + (float)currentAddress / (float)chipSize *  100); 
-		System.out.println(" Time Elapsed - " + TimeUtils.millisToMinutes(System.currentTimeMillis() - startTime));
+		//mainFrame.updateBurnProgress((float)currentAddress / (float)chipSize);
 		
 	}
 	
@@ -83,11 +94,11 @@ public class BurnManager  {
 		burnState = IDLE_MODE;
 		switch(message) {
 		case DONE:
-			System.out.println("Burn complete! Time elapsed " + TimeUtils.millisToMinutes(System.currentTimeMillis() - startTime));
+			mainFrame.updateMessageArea("Burn complete! Time elapsed " + TimeUtils.millisToMinutes(System.currentTimeMillis() - startTime));
 			beginRead();
 			break;
 		case FAIL_MSG:
-			System.out.println("Burn failed! Current Address is " + Integer.toHexString(currentAddress));
+			mainFrame.updateMessageArea("Burn failed! Current Address is " + Integer.toHexString(currentAddress));
 			break;
 		}
 		
@@ -101,7 +112,7 @@ public class BurnManager  {
 			if(dataReceived == SUCCESS_MSG) {
 				beginBurn();
 			} else {
-				System.out.println("Write Command Failed");
+				mainFrame.updateMessageArea("Write Command Failed");
 			}
 			break;
 		case WRITING:
@@ -116,12 +127,10 @@ public class BurnManager  {
 				errorCount++;
 			}
 			readBuffer[currentAddress++] = dataReceived;
-			System.out.print("Address - " + Integer.toHexString(currentAddress));
-			System.out.print(" Percent - " + (float)currentAddress / (float)chipSize *  100); 
-			System.out.println(" Time Elapsed - " + TimeUtils.millisToMinutes(System.currentTimeMillis() - startTime));
+			mainFrame.updateBurnProgress((float)currentAddress / (float)chipSize);
 			if(currentAddress >= chipSize) {
-				System.out.println("Read complete! Time elapsed " + TimeUtils.millisToMinutes(System.currentTimeMillis() - startTime));
-				System.out.println("There were " + errorCount + " errors!");
+				mainFrame.updateMessageArea("Read complete! Time elapsed " + TimeUtils.millisToMinutes(System.currentTimeMillis() - startTime));
+				mainFrame.updateMessageArea("There were " + errorCount + " errors!");
 				burnState = IDLE_MODE;
 				currentAddress = 0;
 				saveReadFile();
@@ -163,6 +172,7 @@ public class BurnManager  {
 				} catch(IOException e) {}
 			}
 		}
+		mainFrame.updateMessageArea("Loaded file! " + f.getName());
 	}
 
 }

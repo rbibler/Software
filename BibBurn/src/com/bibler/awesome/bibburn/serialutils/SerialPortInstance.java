@@ -59,6 +59,7 @@ public class SerialPortInstance implements Runnable {
 		try {
 			do {
 				read = in.read();
+				System.out.println(Integer.toHexString(read));
 				burnManager.receiveSerialData(read);
 			} while(read != -1 && in.available() > 0);
 		} catch (IOException e) {
