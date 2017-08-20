@@ -1,5 +1,6 @@
 package com.bibler.awesome.bibburn.burnutils;
 
+import java.awt.Color;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -8,37 +9,57 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 import com.bibler.awesome.bibburn.serialutils.SerialPortInstance;
+import com.bibler.awesome.bibburn.utils.Chip;
+import com.bibler.awesome.bibburn.utils.ChipFactory;
 import com.bibler.awesome.bibburn.utils.TimeUtils;
 import com.bibler.awesome.bibburner.ui.MainFrame;
 
 public class BurnManager  {
 	
-	private int[] dataBuffer;
 	private int[] readBuffer;
+	private int[] dataBuffer;
 	private SerialPortInstance serialPort;
-	private int chipSize = 0x80000;
-	private int dataBufferSize = 0x400;
 	private int burnState;
+	private int dataBufferSize;
+	private int chipSize;
 	private int currentAddress;
 	private int errorCount;
 	private long startTime;
 	
 	final int WRITE_CMD = '!';
 	final int READ_CMD = '%';
+	final int CHIP_CHANGE_CMD = '&';
 	final int IDLE_MODE = 0x00;
 	final int WRITE_MSG_SENT = 0x01;
 	final int WRITING = 0x02;
 	final int READING = 0x03;
+	final int CHIP_CHANGE_MSG_SENT = 0x04;
 	final int SUCCESS_MSG = 0x01;
 	final int FAIL_MSG = 0x00;
 	final int DONE = 0x03;
 	
 	private MainFrame mainFrame;
+	private Chip currentChip;
 	
 	public BurnManager(SerialPortInstance serialPort) {
 		this.serialPort = serialPort;
 		if(serialPort != null) {
 			this.serialPort.setBurnManager(this);
+		}
+		currentChip = ChipFactory.createChip(ChipFactory.AM29F040);
+		initializeBuffers();
+	}
+	
+	public void setNewChip(int newChipID) {
+		currentChip = ChipFactory.createChip(newChipID);
+		dataBufferSize = currentChip.getDataBufferSize();
+		chipSize = currentChip.getChipSize();
+		burnState = CHIP_CHANGE_MSG_SENT;
+		if(serialPort != null) {
+			serialPort.write(CHIP_CHANGE_CMD);
+			serialPort.write(newChipID);
+		} else {
+			mainFrame.updateMessageArea("No Serial Port Connected! Can't change chip!");
 		}
 		initializeBuffers();
 	}
@@ -48,8 +69,8 @@ public class BurnManager  {
 	}
 	
 	private void initializeBuffers() {
-		dataBuffer = new int[chipSize];
-		readBuffer = new int[chipSize];
+		readBuffer = new int[currentChip.getChipSize()];
+		dataBuffer = new int[currentChip.getChipSize()];
 	}
 	
 	public void loadFile(File f) {
@@ -70,6 +91,7 @@ public class BurnManager  {
 	}
 	
 	private void beginRead() {
+		mainFrame.updateProgressBarColor(Color.DARK_GRAY);
 		mainFrame.updateMessageArea("Beginning Read!");
 		errorCount = 0;
 		currentAddress = 0;
@@ -110,6 +132,15 @@ public class BurnManager  {
 		switch(burnState) {
 		case IDLE_MODE:
 			break;
+		case CHIP_CHANGE_MSG_SENT:
+			burnState = IDLE_MODE;
+			if(dataReceived == SUCCESS_MSG) {
+				mainFrame.updateMessageArea("Chip successfully changed!");
+				mainFrame.updateMessageArea(currentChip.printChipInfo());
+			} else {
+				mainFrame.updateMessageArea("Chip change failed!");
+			}
+			break;
 		case WRITE_MSG_SENT:
 			if(dataReceived == SUCCESS_MSG) {
 				beginBurn();
@@ -118,7 +149,7 @@ public class BurnManager  {
 			}
 			break;
 		case WRITING:
-			if(dataReceived == SUCCESS_MSG) {
+			if(dataReceived != FAIL_MSG) {
 				burnNextBlock();
 			} else {
 				endBurn(FAIL_MSG);
@@ -133,6 +164,11 @@ public class BurnManager  {
 			float percentComplete = (float) currentAddress / (float) chipSize;
 			mainFrame.updateBurnProgress(percentComplete, timeElapsed, calculateTotalTime(timeElapsed));
 			if(currentAddress >= chipSize) {
+				if(errorCount == 0) {
+					mainFrame.updateProgressBarColor(Color.GREEN);
+				} else {
+					mainFrame.updateProgressBarColor(Color.RED);
+				}
 				mainFrame.updateMessageArea("Read complete! Time elapsed " + TimeUtils.millisToMinutes(System.currentTimeMillis() - startTime, false));
 				mainFrame.updateMessageArea("There were " + errorCount + " errors!");
 				burnState = IDLE_MODE;

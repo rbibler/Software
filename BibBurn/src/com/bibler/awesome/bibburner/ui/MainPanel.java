@@ -16,6 +16,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SpringLayout;
+import javax.swing.UIManager;
 
 import com.bibler.awesome.bibburn.utils.TimeUtils;
 
@@ -124,18 +125,17 @@ public class MainPanel extends JPanel {
 				mainFrame.startBurn();
 				break;
 			case "LOAD":
-				if(chooser == null) {
-					chooser = new JFileChooser("C:/users/ryan/desktop");
-				}
-				int result = chooser.showOpenDialog(MainPanel.this);
-				if(result == JFileChooser.APPROVE_OPTION) {
-					mainFrame.loadFile(chooser.getSelectedFile());
-					fileField.setText(chooser.getSelectedFile().getAbsolutePath());
-				}
+				fileField.setText(mainFrame.openFile());
 				break;
 			}
 			
 		}
+		
+	}
+
+	public void updateProgressBarColor(Color color) {
+		setBackground(color);
+		repaint();
 		
 	}
 }

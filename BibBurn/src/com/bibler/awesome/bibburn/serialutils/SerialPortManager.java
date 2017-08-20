@@ -6,6 +6,7 @@ import java.util.HashSet;
 
 import gnu.io.CommPort;
 import gnu.io.CommPortIdentifier;
+import gnu.io.NoSuchPortException;
 import gnu.io.SerialPort;
 
 public class SerialPortManager implements Runnable {
@@ -41,8 +42,15 @@ public class SerialPortManager implements Runnable {
     
     public SerialPortInstance connect(String portName, int speed) throws Exception {
         SerialPort serialPort = null;
-    	CommPortIdentifier portIdentifier = CommPortIdentifier.getPortIdentifier(portName);
-        if (portIdentifier.isCurrentlyOwned()) {
+        CommPortIdentifier portIdentifier = null;
+        try {
+    		portIdentifier = CommPortIdentifier.getPortIdentifier(portName);
+        } catch(NoSuchPortException e) {
+        	
+        }
+        if(portIdentifier == null) {
+        	return null;
+        } else if (portIdentifier.isCurrentlyOwned()) {
             throw (new Exception("Error: Port is currently in use"));
         } else {
             CommPort commPort = portIdentifier.open("BibBurn", 2000);
