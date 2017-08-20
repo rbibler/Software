@@ -18,6 +18,7 @@ public class MainMenu extends JMenuBar {
 	private JMenuItem loadMenuItem;
 	private JMenuItem exitMenuItem;
 	private JMenu chipsMenuItem;
+	private JMenuItem AT28C256MenuItem;
 	private JMenuItem AM29F040MenuItem;
 	private JMenuItem GLS29EE010MenuItem;
 	private MenuListener menuListener;
@@ -52,14 +53,19 @@ public class MainMenu extends JMenuBar {
 	private void initializeBurnMenu() {
 		burnMenu = new JMenu("Burner");
 		chipsMenuItem = new JMenu("Select Chip...");
-		AM29F040MenuItem = new JMenuItem("AM29F040");
-		AM29F040MenuItem.setActionCommand("AM29F040");
-		AM29F040MenuItem.addActionListener(menuListener);
+		AT28C256MenuItem = new JMenuItem("AT28C256");
+		AT28C256MenuItem.setActionCommand("AT28C256");
+		AT28C256MenuItem.addActionListener(menuListener);
 		GLS29EE010MenuItem = new JMenuItem("GLS29EE010");
 		GLS29EE010MenuItem.setActionCommand("GLS29EE010");
 		GLS29EE010MenuItem.addActionListener(menuListener);
-		chipsMenuItem.add(AM29F040MenuItem);
+		AM29F040MenuItem = new JMenuItem("AM29F040");
+		AM29F040MenuItem.setActionCommand("AM29F040");
+		AM29F040MenuItem.addActionListener(menuListener);
+		
+		chipsMenuItem.add(AT28C256MenuItem);
 		chipsMenuItem.add(GLS29EE010MenuItem);
+		chipsMenuItem.add(AM29F040MenuItem);
 		burnMenu.add(chipsMenuItem);
 		add(burnMenu);
 	}
@@ -75,6 +81,9 @@ public class MainMenu extends JMenuBar {
 				break;
 			case "EXIT":
 				mainFrame.exitProgram();
+				break;
+			case "AT28C256":
+				mainFrame.switchChip(ChipFactory.AT28C256);
 				break;
 			case "AM29F040":
 				mainFrame.switchChip(ChipFactory.AM29F040);

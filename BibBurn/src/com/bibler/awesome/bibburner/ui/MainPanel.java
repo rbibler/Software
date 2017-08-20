@@ -41,6 +41,7 @@ public class MainPanel extends JPanel {
 		super();
 		initialize();
 		this.mainFrame = mainFrame;
+		setBorder(BorderFactory.createLineBorder(Color.RED, 6));
 	}
 	
 	private void initialize() {
@@ -50,8 +51,6 @@ public class MainPanel extends JPanel {
 		setupProgressBar(layout);
 		setupButtons(layout);
 		setupTextFields(layout);
-		
-		
 	}
 	
 	private void setupButtons(SpringLayout layout) {
@@ -134,7 +133,7 @@ public class MainPanel extends JPanel {
 	}
 
 	public void updateProgressBarColor(Color color) {
-		setBackground(color);
+		setBorder(BorderFactory.createLineBorder(color));
 		repaint();
 		
 	}
