@@ -34,8 +34,8 @@ public class MainFrame extends JFrame {
 		setVisible(true);
 	}
 	
-	public void updateBurnProgress(float progress) {
-		mainPanel.updateProgress(progress);
+	public void updateBurnProgress(float progress, long timeElapsed, long totalTime) {
+		mainPanel.updateProgress(progress, timeElapsed, totalTime);
 	}
 	
 	public void loadFile(File f) {

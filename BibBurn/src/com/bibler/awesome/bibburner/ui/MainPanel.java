@@ -8,11 +8,16 @@ import java.awt.event.ActionListener;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
+import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.SpringLayout;
+
+import com.bibler.awesome.bibburn.utils.TimeUtils;
 
 public class MainPanel extends JPanel {
 	
@@ -25,6 +30,8 @@ public class MainPanel extends JPanel {
 	JTextField fileField;
 	JTextArea messageArea;
 	JProgressBar progressBar;
+	JScrollPane messageScrollPane;
+	JLabel timeLabel;
 	
 	private MainFrame mainFrame;
 	private JFileChooser chooser;
@@ -39,9 +46,10 @@ public class MainPanel extends JPanel {
 		SpringLayout layout = new SpringLayout();
 		setLayout(layout);
 		setPreferredSize(new Dimension(450, 350));
+		setupProgressBar(layout);
 		setupButtons(layout);
 		setupTextFields(layout);
-		setupProgressBar(layout);
+		
 		
 	}
 	
@@ -67,14 +75,22 @@ public class MainPanel extends JPanel {
 		fileField = new JTextField();
 		fileField.setPreferredSize(new Dimension(275, 25));
 		messageArea = new JTextArea();
-		messageArea.setPreferredSize(new Dimension(400, 100));
+		messageArea.setMinimumSize(new Dimension(400, 100));
 		messageArea.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+		messageArea.setLineWrap(true);
+		messageScrollPane = new JScrollPane(messageArea);
+		messageScrollPane.setPreferredSize(new Dimension(400, 100));
+		messageScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+		timeLabel = new JLabel("--:--/--:--");
 		layout.putConstraint(SpringLayout.NORTH, fileField, 50, SpringLayout.NORTH, this);
 		layout.putConstraint(SpringLayout.EAST, fileField, 0, SpringLayout.WEST, fileButton);
-		layout.putConstraint(SpringLayout.NORTH,messageArea, 225, SpringLayout.NORTH, this);
-		layout.putConstraint(SpringLayout.WEST, messageArea, 25, SpringLayout.WEST, this);
+		layout.putConstraint(SpringLayout.NORTH,messageScrollPane, 225, SpringLayout.NORTH, this);
+		layout.putConstraint(SpringLayout.WEST, messageScrollPane, 25, SpringLayout.WEST, this);
+		layout.putConstraint(SpringLayout.EAST, timeLabel, 0, SpringLayout.EAST, progressBar);
+		layout.putConstraint(SpringLayout.NORTH, timeLabel, 5, SpringLayout.SOUTH, progressBar);
 		add(fileField);
-		add(messageArea);
+		add(messageScrollPane);
+		add(timeLabel);
 		
 	}
 	
@@ -86,8 +102,9 @@ public class MainPanel extends JPanel {
 		add(progressBar);
 	}
 	
-	public void updateProgress(float progress) {
+	public void updateProgress(float progress, long timeElapsed, long timeRemaining) {
 		progressBar.setValue((int) (100 * progress));
+		timeLabel.setText("Elapsed " + TimeUtils.millisToMinutes(timeElapsed, false) + " Remaining: " + TimeUtils.millisToMinutes(timeRemaining, false));
 		repaint();
 	}
 	
@@ -113,6 +130,7 @@ public class MainPanel extends JPanel {
 				int result = chooser.showOpenDialog(MainPanel.this);
 				if(result == JFileChooser.APPROVE_OPTION) {
 					mainFrame.loadFile(chooser.getSelectedFile());
+					fileField.setText(chooser.getSelectedFile().getAbsolutePath());
 				}
 				break;
 			}
@@ -120,7 +138,4 @@ public class MainPanel extends JPanel {
 		}
 		
 	}
-	
-	
-
 }

@@ -59,11 +59,11 @@ public class BurnManager  {
 	public void sendBurnCommand() {
 		serialPort.write(WRITE_CMD);
 		burnState = WRITE_MSG_SENT;
-		//mainFrame.updateMessageArea("Sent Write Command!!");
+		mainFrame.updateMessageArea("Sent Write Command!!");
 	}
 	
 	private void beginBurn() {
-		//mainFrame.updateMessageArea("Beginning Burn!");
+		mainFrame.updateMessageArea("Beginning Burn!");
 		startTime = System.currentTimeMillis();
 		burnState = WRITING;
 		burnNextBlock();
@@ -85,7 +85,9 @@ public class BurnManager  {
 		}
 		serialPort.writeBlock(dataBuffer, currentAddress, dataBufferSize);
 		currentAddress += dataBufferSize;
-		//mainFrame.updateBurnProgress((float)currentAddress / (float)chipSize);
+		long timeElapsed = System.currentTimeMillis() - startTime;
+		float percentComplete = (float) currentAddress / (float) chipSize;
+		mainFrame.updateBurnProgress(percentComplete, timeElapsed, calculateTotalTime(timeElapsed));
 		
 	}
 	
@@ -94,7 +96,7 @@ public class BurnManager  {
 		burnState = IDLE_MODE;
 		switch(message) {
 		case DONE:
-			mainFrame.updateMessageArea("Burn complete! Time elapsed " + TimeUtils.millisToMinutes(System.currentTimeMillis() - startTime));
+			mainFrame.updateMessageArea("Burn complete! Time elapsed " + TimeUtils.millisToMinutes(System.currentTimeMillis() - startTime, false));
 			beginRead();
 			break;
 		case FAIL_MSG:
@@ -127,9 +129,11 @@ public class BurnManager  {
 				errorCount++;
 			}
 			readBuffer[currentAddress++] = dataReceived;
-			mainFrame.updateBurnProgress((float)currentAddress / (float)chipSize);
+			long timeElapsed = System.currentTimeMillis() - startTime;
+			float percentComplete = (float) currentAddress / (float) chipSize;
+			mainFrame.updateBurnProgress(percentComplete, timeElapsed, calculateTotalTime(timeElapsed));
 			if(currentAddress >= chipSize) {
-				mainFrame.updateMessageArea("Read complete! Time elapsed " + TimeUtils.millisToMinutes(System.currentTimeMillis() - startTime));
+				mainFrame.updateMessageArea("Read complete! Time elapsed " + TimeUtils.millisToMinutes(System.currentTimeMillis() - startTime, false));
 				mainFrame.updateMessageArea("There were " + errorCount + " errors!");
 				burnState = IDLE_MODE;
 				currentAddress = 0;
@@ -137,6 +141,10 @@ public class BurnManager  {
 			}
 			break;
 		}
+	}
+	
+	private long calculateTotalTime(long timeElapsed) {
+		return (long) (((float) timeElapsed / (float) currentAddress) * (chipSize - currentAddress));
 	}
 	
 	private void saveReadFile() {
